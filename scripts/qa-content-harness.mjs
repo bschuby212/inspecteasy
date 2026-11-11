@@ -190,6 +190,83 @@ try {
   const afterReset = await page.$eval("#title", (el) => getComputedStyle(el).fontSize);
   check("Reset restores styles", afterReset !== "48px", afterReset);
 
+  // Flag / comment
+  await page.evaluate(() => {
+    const root = document.getElementById("inspect-studio-root")?.shadowRoot;
+    const btn = [...(root?.querySelectorAll("button") ?? [])].find((b) =>
+      b.textContent?.includes("Flag issue"),
+    );
+    btn?.click();
+  });
+  await sleep(200);
+  const composerOpen = await page.evaluate(() =>
+    Boolean(
+      document
+        .getElementById("inspect-studio-root")
+        ?.shadowRoot?.querySelector(".comment-composer"),
+    ),
+  );
+  check("Flag opens comment composer", composerOpen);
+
+  await page.evaluate(() => {
+    const root = document.getElementById("inspect-studio-root")?.shadowRoot;
+    const area = root?.querySelector("#is-comment-note");
+    if (!(area instanceof HTMLTextAreaElement)) throw new Error("missing textarea");
+    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")?.set;
+    setter?.call(area, "Spacing feels too tight next to Secondary");
+    area.dispatchEvent(new Event("input", { bubbles: true }));
+    area.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await sleep(100);
+  await page.evaluate(() => {
+    const root = document.getElementById("inspect-studio-root")?.shadowRoot;
+    [...(root?.querySelectorAll("button") ?? [])]
+      .find((b) => b.textContent?.includes("Pin comment"))
+      ?.click();
+  });
+  await sleep(250);
+  const pinVisible = await page.evaluate(() =>
+    Boolean(
+      document
+        .getElementById("inspect-studio-root")
+        ?.shadowRoot?.querySelector(".comment-pin-btn"),
+    ),
+  );
+  check("Pinned comment marker appears", pinVisible);
+
+  await page.evaluate(() => {
+    const root = document.getElementById("inspect-studio-root")?.shadowRoot;
+    const toggle = [...(root?.querySelectorAll(".toolbar-btn") ?? [])].find(
+      (b) => b.getAttribute("aria-label")?.includes("comments"),
+    );
+    toggle?.click();
+  });
+  await sleep(150);
+  const pinsHidden = await page.evaluate(
+    () =>
+      !document
+        .getElementById("inspect-studio-root")
+        ?.shadowRoot?.querySelector(".comment-pin-btn"),
+  );
+  check("Toolbar toggles comments off", pinsHidden);
+
+  await page.evaluate(() => {
+    const root = document.getElementById("inspect-studio-root")?.shadowRoot;
+    const toggle = [...(root?.querySelectorAll(".toolbar-btn") ?? [])].find(
+      (b) => b.getAttribute("aria-label")?.includes("comments"),
+    );
+    toggle?.click();
+  });
+  await sleep(150);
+  const pinsShown = await page.evaluate(() =>
+    Boolean(
+      document
+        .getElementById("inspect-studio-root")
+        ?.shadowRoot?.querySelector(".comment-pin-btn"),
+    ),
+  );
+  check("Toolbar toggles comments on", pinsShown);
+
   // Measurement
   const cta = await page.$eval("#cta", (el) => {
     const r = el.getBoundingClientRect();

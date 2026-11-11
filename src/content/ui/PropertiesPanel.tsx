@@ -1,4 +1,4 @@
-import { RotateCcw, X } from "lucide-react";
+import { MessageSquarePlus, RotateCcw, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { EditableStyles, ElementSnapshot } from "../../shared/types";
 import { px } from "../../shared/format";
@@ -8,9 +8,11 @@ interface PropertiesPanelProps {
   open: boolean;
   snapshot: ElementSnapshot | null;
   hasEdits: boolean;
+  canComment: boolean;
   onClose: () => void;
   onReset: () => void;
   onEdit: (styles: EditableStyles) => void;
+  onFlag: () => void;
 }
 
 function toColorInput(value: string, fallback: string): string {
@@ -24,9 +26,11 @@ export function PropertiesPanel({
   open,
   snapshot,
   hasEdits,
+  canComment,
   onClose,
   onReset,
   onEdit,
+  onFlag,
 }: PropertiesPanelProps) {
   const [draft, setDraft] = useState({
     fontSize: "",
@@ -88,6 +92,18 @@ export function PropertiesPanel({
             <div className="section">
               <div className="element-chip" title={snapshot.label}>
                 {snapshot.label}
+              </div>
+              <div className="btn-row" style={{ marginTop: 10 }}>
+                <button
+                  type="button"
+                  className="btn primary"
+                  disabled={!canComment}
+                  onClick={onFlag}
+                  title="Pin a comment on this element"
+                >
+                  <MessageSquarePlus size={14} />
+                  Flag issue
+                </button>
               </div>
             </div>
 

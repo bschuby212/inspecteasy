@@ -1,5 +1,16 @@
 export type ToolMode = "select" | "measure";
 
+export interface DesignComment {
+  id: string;
+  pageUrl: string;
+  elementLabel: string;
+  note: string;
+  /** Document coordinates (includes scroll) for the pin anchor. */
+  pageX: number;
+  pageY: number;
+  createdAt: number;
+}
+
 export interface ElementGeometry {
   width: number;
   height: number;

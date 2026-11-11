@@ -10,6 +10,7 @@ A designer-friendly Chrome extension for inspecting websites visually — inspir
 - One-click copy for property values
 - Alt/Option spacing measurement between two elements
 - Temporary live edits (font size, colors, radius, padding) with reset
+- Pin design comments (“why this is off”) on selected elements, with a toolbar toggle to show/hide pins
 - Shadow DOM UI isolation so page styles do not leak into the inspector
 
 All inspection stays local in the browser. No analytics, accounts, or network transmission of page content.
@@ -46,8 +47,12 @@ A portable ZIP is also generated at `inspect-studio-extension.zip` (contents of 
 | Pause selection | `Esc` (pointer tool resumes) |
 | Measure spacing | Select an element, hold `Alt`/`Option`, hover another |
 | Hide / show panel | Eye button in the toolbar |
+| Flag an issue | Select an element → **Flag issue** in the Design panel → write why → Pin comment |
+| Show / hide comments | Message icon in the toolbar |
 | Reset edits | Reset button in the Design panel |
 | Close | Toolbar ✕ or deactivate via the extension icon |
+
+Comments are stored locally in the browser for that page URL (not synced to the cloud).
 
 Refreshing the page always restores the original site styles.
 

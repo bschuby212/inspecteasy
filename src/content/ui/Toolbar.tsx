@@ -2,6 +2,8 @@ import {
   Crosshair,
   Eye,
   EyeOff,
+  MessageSquare,
+  MessageSquareOff,
   MousePointer2,
   Ruler,
   X,
@@ -13,8 +15,11 @@ interface ToolbarProps {
   mode: ToolMode;
   panelOpen: boolean;
   measuring: boolean;
+  commentsVisible: boolean;
+  commentCount: number;
   onModeChange: (mode: ToolMode) => void;
   onTogglePanel: () => void;
+  onToggleComments: () => void;
   onClose: () => void;
 }
 
@@ -22,13 +27,16 @@ export function Toolbar({
   mode,
   panelOpen,
   measuring,
+  commentsVisible,
+  commentCount,
   onModeChange,
   onTogglePanel,
+  onToggleComments,
   onClose,
 }: ToolbarProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
-  const drag = useRef<{ ox: number; oy: number; startX: number; startY: number } | null>(null);
+  const drag = useRef<{ ox: number; oy: number } | null>(null);
   const [dragging, setDragging] = useState(false);
 
   useEffect(() => {
@@ -72,8 +80,6 @@ export function Toolbar({
           drag.current = {
             ox: e.clientX - rect.left,
             oy: e.clientY - rect.top,
-            startX: e.clientX,
-            startY: e.clientY,
           };
           setDragging(true);
           if (pos == null) setPos({ x: rect.left, y: rect.top });
@@ -117,8 +123,27 @@ export function Toolbar({
         {panelOpen ? <Eye size={15} /> : <EyeOff size={15} />}
       </button>
 
+      <button
+        type="button"
+        className={`toolbar-btn${commentsVisible ? " active" : ""}`}
+        onClick={onToggleComments}
+        title={
+          commentsVisible
+            ? `Hide comments (${commentCount})`
+            : `Show comments (${commentCount})`
+        }
+        aria-label={commentsVisible ? "Hide comments" : "Show comments"}
+        aria-pressed={commentsVisible}
+      >
+        {commentsVisible ? <MessageSquare size={15} /> : <MessageSquareOff size={15} />}
+      </button>
+
       <span className="toolbar-hint">
-        {measuring ? "Measuring…" : mode === "select" ? "Click to select · Esc exits" : "Alt + hover"}
+        {measuring
+          ? "Measuring…"
+          : mode === "select"
+            ? "Click to select · Esc exits"
+            : "Alt + hover"}
       </span>
 
       <button
