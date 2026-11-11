@@ -1,0 +1,31 @@
+{
+  "name": "inspect-studio",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Designer-friendly Chrome inspector inspired by Figma",
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "tsc --noEmit && vite build && node scripts/package-extension.mjs",
+    "typecheck": "tsc --noEmit --pretty false",
+    "icons": "node scripts/generate-icons.mjs",
+    "qa": "node scripts/qa-unit.mjs && node scripts/qa-content-harness.mjs && node scripts/qa-multisite.mjs",
+    "demo": "node scripts/record-demo.mjs",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "lucide-react": "^0.511.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.326",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@vitejs/plugin-react": "^4.4.1",
+    "puppeteer-core": "^25.17.0",
+    "typescript": "~5.8.3",
+    "vite": "^6.3.5"
+  }
+}

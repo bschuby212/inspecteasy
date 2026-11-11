@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inspect Studio Test Fixture</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+        --ink: #14213d;
+        --accent: #264a68;
+        --surface: #f3f6f9;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, #e8eef5, transparent 40%),
+          linear-gradient(180deg, #ffffff, var(--surface));
+        min-height: 200vh;
+      }
+      header {
+        padding: 48px 64px 24px;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 40px;
+        font-weight: 600;
+        letter-spacing: -0.03em;
+        color: var(--accent);
+      }
+      .lead {
+        margin: 0;
+        max-width: 520px;
+        font-size: 18px;
+        line-height: 1.6;
+        color: #40556d;
+      }
+      .toolbar-demo {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+      }
+      button.primary {
+        background: var(--accent);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 12px 18px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button.ghost {
+        background: white;
+        color: var(--accent);
+        border: 1px solid #c9d5e3;
+        border-radius: 10px;
+        padding: 12px 18px;
+        font-size: 15px;
+        cursor: pointer;
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 24px;
+        padding: 24px 64px 80px;
+      }
+      .card {
+        background: white;
+        border: 1px solid #d9e2ec;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 10px 30px rgba(20, 33, 61, 0.06);
+      }
+      .card h2 {
+        margin: 0 0 12px;
+        font-size: 22px;
+      }
+      .card p {
+        margin: 0;
+        line-height: 1.55;
+      }
+      .flex-row {
+        display: flex;
+        gap: 16px;
+        align-items: stretch;
+        margin-top: 16px;
+      }
+      .flex-row .chip {
+        flex: 1;
+        padding: 16px;
+        border-radius: 12px;
+        background: #eef3f8;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-top: 16px;
+      }
+      .grid .cell {
+        background: #f7fafc;
+        border-radius: 10px;
+        padding: 18px;
+        border: 1px solid #e2e8f0;
+      }
+      form {
+        display: grid;
+        gap: 12px;
+      }
+      label {
+        display: grid;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      input, select, textarea {
+        border: 1px solid #c9d5e3;
+        border-radius: 8px;
+        padding: 10px 12px;
+        font: inherit;
+      }
+      nav {
+        display: flex;
+        gap: 18px;
+        padding: 16px 64px;
+        border-bottom: 1px solid #d9e2ec;
+        background: rgba(255,255,255,0.85);
+        position: sticky;
+        top: 0;
+        backdrop-filter: blur(8px);
+      }
+      nav a {
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: 600;
+      }
+      .scroll-box {
+        height: 180px;
+        overflow: auto;
+        border: 1px solid #d9e2ec;
+        border-radius: 12px;
+        padding: 12px;
+        margin-top: 16px;
+        background: #fbfdff;
+      }
+      .nested {
+        padding: 20px;
+        background: #e8eef5;
+        border-radius: 12px;
+      }
+      .nested .inner {
+        padding: 20px;
+        background: white;
+        border-radius: 10px;
+        border: 1px dashed #99adc4;
+      }
+      img.hero {
+        width: 100%;
+        height: 160px;
+        object-fit: cover;
+        border-radius: 12px;
+        margin-top: 16px;
+        background: linear-gradient(120deg, #264a68, #7ea2c4);
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <a href="#cards">Cards</a>
+      <a href="#forms">Forms</a>
+      <a href="#nested">Nested</a>
+    </nav>
+    <header>
+      <h1 id="title">Inspect Studio fixture</h1>
+      <p class="lead">
+        Nested flex and grid layouts, form controls, sticky navigation, and a scrolling
+        container for QA.
+      </p>
+      <div class="toolbar-demo">
+        <button class="primary" id="cta">Primary action</button>
+        <button class="ghost" type="button">Secondary</button>
+        <a href="https://example.com" id="outbound">Outbound link</a>
+      </div>
+    </header>
+    <main class="layout">
+      <section class="card" id="cards">
+        <h2>Content card</h2>
+        <p>
+          Use this paragraph to verify typography extraction: font family, size, weight,
+          line height, and color.
+        </p>
+        <div class="flex-row">
+          <div class="chip">Flex item A</div>
+          <div class="chip">Flex item B</div>
+          <div class="chip">Flex item C</div>
+        </div>
+        <div class="grid">
+          <div class="cell">Grid cell 1</div>
+          <div class="cell">Grid cell 2</div>
+          <div class="cell">Grid cell 3</div>
+          <div class="cell">Grid cell 4</div>
+        </div>
+        <div class="scroll-box">
+          <p>Scrollable region line 1</p>
+          <p>Scrollable region line 2</p>
+          <p>Scrollable region line 3</p>
+          <p>Scrollable region line 4</p>
+          <p>Scrollable region line 5</p>
+          <p>Scrollable region line 6</p>
+          <p>Scrollable region line 7</p>
+          <p>Scrollable region line 8</p>
+        </div>
+        <img class="hero" alt="Gradient placeholder" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='160'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1'%3E%3Cstop stop-color='%23264A68'/%3E%3Cstop offset='1' stop-color='%237EA2C4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='800' height='160' fill='url(%23g)'/%3E%3C/svg%3E" />
+      </section>
+      <aside class="card" id="forms">
+        <h2>Form controls</h2>
+        <form onsubmit="event.preventDefault()">
+          <label>
+            Name
+            <input type="text" placeholder="Ada Lovelace" />
+          </label>
+          <label>
+            Role
+            <select>
+              <option>Designer</option>
+              <option>Product</option>
+              <option>Engineer</option>
+            </select>
+          </label>
+          <label>
+            Notes
+            <textarea rows="4" placeholder="Temporary edits stay local"></textarea>
+          </label>
+          <button class="primary" type="submit">Submit</button>
+        </form>
+        <div class="nested" id="nested" style="margin-top: 20px">
+          <div class="inner">
+            <strong>Nested container</strong>
+            <p style="margin: 8px 0 0; font-size: 14px; color: #40556d;">
+              Padding and margin measurement target.
+            </p>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,9 @@
+node_modules/
+dist-build-info.json
+qa-output/
+extension-private.pem
+extension-key.pem
+.extension-id
+*.log
+.DS_Store
+.chrome-profile/

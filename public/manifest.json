@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "Inspect Studio",
+  "description": "A designer-friendly visual inspector for websites. Click elements to inspect layout, typography, spacing, and colors \u2014 without DevTools.",
+  "version": "1.0.0",
+  "action": {
+    "default_title": "Toggle Inspect Studio",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/*",
+        "fonts/*"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqtRXrbYvoog3+aguB63yzyI2qur2X7raVSo5yzOSMgfAENsdewcrKT8WD23dMRdPU0Ye+27UL68lU0s06MBQNrOORf4+xrv5noEEHilTjFfFEEuIE6je7nvX4orpeXJ/ffQFnykvML7j8tll6JbSPnV4SuSZJF9qL2hWr7/1S40PdQUdA6qizsPnQ2+lLVC+AJZ13S7etiE28O1KcwqlxjiaMgCIpJ+Aj6EBygE/bumzo+FLMqq5g/0FtxOWmMO6JDHAdn06E8ItrWUYHs0A/N7k5Su0+43bq5AuTIuSBTLWETVs7wj4xXPoec0vyCf2NFpcv0ZEYdhgdqVwrYeG3QIDAQAB"
+}
