@@ -114,7 +114,7 @@ await page.evaluate(() => {
 await sleep(400);
 await shot("copied property");
 
-// 7. Measure
+// 7. Measure — Alt+hover
 const ghost = await page.$eval("button.ghost", (el) => {
   const r = el.getBoundingClientRect();
   return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
@@ -122,9 +122,47 @@ const ghost = await page.$eval("button.ghost", (el) => {
 await page.keyboard.down("Alt");
 await page.mouse.move(ghost.x, ghost.y, { steps: 10 });
 await sleep(500);
-await shot("measurement guides");
+await shot("alt measurement guides");
 await page.keyboard.up("Alt");
 await sleep(300);
+
+// 7b. Measure mode (toolbar) + nested insets
+await page.evaluate(() => {
+  const root = document.getElementById("inspect-studio-root")?.shadowRoot;
+  const measureBtn = [...(root?.querySelectorAll(".toolbar-btn") ?? [])].find(
+    (b) => b.getAttribute("aria-label") === "Measure tool",
+  );
+  measureBtn?.click();
+});
+await sleep(300);
+await page.evaluate(() =>
+  document.querySelector("#cards")?.scrollIntoView({ block: "center", inline: "nearest" }),
+);
+await sleep(200);
+const card = await page.$eval("#cards", (el) => {
+  const r = el.getBoundingClientRect();
+  return { x: r.left + 16, y: r.top + 16 };
+});
+await page.mouse.click(card.x, card.y);
+await sleep(350);
+await shot("measure mode base set");
+const chip = await page.$eval("#cards .chip", (el) => {
+  const r = el.getBoundingClientRect();
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+});
+await page.mouse.move(chip.x, chip.y, { steps: 12 });
+await sleep(550);
+await shot("nested inset guides");
+await page.evaluate(() => {
+  const root = document.getElementById("inspect-studio-root")?.shadowRoot;
+  const selectBtn = [...(root?.querySelectorAll(".toolbar-btn") ?? [])].find(
+    (b) => b.getAttribute("aria-label") === "Select tool",
+  );
+  selectBtn?.click();
+});
+await sleep(250);
+await page.mouse.click(cta.x, cta.y);
+await sleep(400);
 
 // 8. Edit
 await page.evaluate(() => {

@@ -146,6 +146,11 @@ export function App({ onClose }: AppProps) {
       }
       if (e.key === "m" || e.key === "M") {
         setMode("measure");
+        setToast(
+          selectedEl
+            ? "Measure mode — hover another element"
+            : "Measure mode — click an element, then hover another",
+        );
       }
     }
 
@@ -164,6 +169,10 @@ export function App({ onClose }: AppProps) {
       if (!isSelectableTarget(el)) {
         setHoverEl(null);
         setHoverRect(null);
+        if (mode === "measure" || e.altKey) {
+          setMeasuring(false);
+          setMeasurement(null);
+        }
         return;
       }
 
@@ -173,12 +182,12 @@ export function App({ onClose }: AppProps) {
       }
 
       const shouldMeasure =
-        selectedEl && el !== selectedEl && (e.altKey || mode === "measure");
+        Boolean(selectedEl) && el !== selectedEl && (e.altKey || mode === "measure");
 
-      if (shouldMeasure) {
+      if (shouldMeasure && selectedEl) {
         setMeasuring(true);
         setMeasurement(measureBetween(selectedEl, el));
-      } else if (!e.altKey && mode !== "measure") {
+      } else {
         setMeasuring(false);
         setMeasurement(null);
       }
@@ -194,7 +203,19 @@ export function App({ onClose }: AppProps) {
       e.preventDefault();
       e.stopPropagation();
 
-      if (e.altKey || mode === "measure") {
+      // Measure mode: click sets/replaces the base element; hover measures from it.
+      // Keep the design panel closed so it does not cover targets under the right edge.
+      if (mode === "measure") {
+        setSelectedEl(el);
+        setSelectedRect(toGeometry(el.getBoundingClientRect()));
+        setSnapshot(extractElementSnapshot(el));
+        setPanelOpen(false);
+        setMeasurement(null);
+        setToast("Base set — hover another element to measure");
+        return;
+      }
+
+      if (e.altKey) {
         if (!selectedEl) {
           setSelectedEl(el);
           setSelectedRect(toGeometry(el.getBoundingClientRect()));
@@ -283,7 +304,22 @@ export function App({ onClose }: AppProps) {
 
   function handleModeChange(next: ToolMode) {
     setMode(next);
-    if (next === "select") setSelecting(true);
+    if (next === "select") {
+      setSelecting(true);
+      setMeasuring(false);
+      setMeasurement(null);
+      return;
+    }
+    // Measure tool — close panel so it does not steal hover over page content
+    setSelecting(true);
+    setPanelOpen(false);
+    setMeasurement(null);
+    setMeasuring(false);
+    setToast(
+      selectedEl
+        ? "Measure mode — hover another element"
+        : "Measure mode — click an element, then hover another",
+    );
   }
 
   function handleFlag() {
@@ -343,6 +379,7 @@ export function App({ onClose }: AppProps) {
         mode={mode}
         panelOpen={panelOpen}
         measuring={measuring}
+        hasSelection={Boolean(selectedEl)}
         commentsVisible={commentsVisible}
         commentCount={comments.length}
         onModeChange={handleModeChange}

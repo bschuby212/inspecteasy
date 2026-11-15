@@ -318,7 +318,7 @@ try {
   });
   check("Toolbar toggles comments on", pinsShown);
 
-  // Measurement
+  // Measurement — Alt+hover in select mode
   const cta = await page.$eval("#cta", (el) => {
     const r = el.getBoundingClientRect();
     return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
@@ -345,6 +345,50 @@ try {
       !document.getElementById("inspect-studio-root")?.shadowRoot?.querySelector(".measure-label"),
   );
   check("Measurement clears on Alt release", cleared);
+
+  // Measurement — dedicated Measure mode (no Alt required)
+  await page.evaluate(() => {
+    const root = document.getElementById("inspect-studio-root")?.shadowRoot;
+    const measureBtn = [...(root?.querySelectorAll(".toolbar-btn") ?? [])].find(
+      (b) => b.getAttribute("aria-label") === "Measure tool",
+    );
+    measureBtn?.click();
+  });
+  await sleep(150);
+  await page.mouse.click(cta.x, cta.y);
+  await sleep(150);
+  await page.mouse.move(ghost.x, ghost.y);
+  await sleep(300);
+  const measureModeVisible = await page.evaluate(() => {
+    const root = document.getElementById("inspect-studio-root")?.shadowRoot;
+    return Boolean(root?.querySelector(".measure-label") && root?.querySelector(".measure-layer"));
+  });
+  check("Measure mode guides without Alt", measureModeVisible);
+
+  // Nested insets: left card → flex chip (avoids sticky nav + right-side panel)
+  await page.evaluate(() =>
+    document.querySelector("#cards")?.scrollIntoView({ block: "center", inline: "nearest" }),
+  );
+  await sleep(150);
+  const cardPt = await page.$eval("#cards", (el) => {
+    const r = el.getBoundingClientRect();
+    return { x: r.left + 16, y: r.top + 16 };
+  });
+  const chipPt = await page.$eval("#cards .chip", (el) => {
+    const r = el.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  });
+  await page.mouse.click(cardPt.x, cardPt.y);
+  await sleep(150);
+  await page.mouse.move(chipPt.x, chipPt.y);
+  await sleep(300);
+  const nestedLabelCount = await page.evaluate(
+    () =>
+      document
+        .getElementById("inspect-studio-root")
+        ?.shadowRoot?.querySelectorAll(".measure-label").length ?? 0,
+  );
+  check("Nested inset guides (>=2 labels)", nestedLabelCount >= 2);
 
   // Scroll keeps selection overlay
   await page.evaluate(() => window.scrollBy(0, 120));

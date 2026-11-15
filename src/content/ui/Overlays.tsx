@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
 import type { ElementGeometry, MeasurementResult } from "../../shared/types";
 import { elementLabel, px } from "../../shared/format";
+import { buildMeasurementGuides } from "../measure/distances";
 
 interface OverlaysProps {
   hoverEl: Element | null;
@@ -35,53 +35,31 @@ function Box({
 }
 
 function MeasureGuides({ measurement }: { measurement: MeasurementResult }) {
-  const { from, to, horizontal, vertical, overlap } = measurement;
-  if (overlap) return null;
+  const guides = buildMeasurementGuides(measurement.from, measurement.to);
+  if (guides.length === 0) return null;
 
-  const guides: ReactNode[] = [];
-
-  if (horizontal != null) {
-    const y = Math.min(from.bottom, to.bottom) - 8;
-    const left = from.right <= to.left ? from.right : to.right;
-    const width = horizontal;
-    guides.push(
-      <div
-        key="h-line"
-        className="measure-line horizontal"
-        style={{ left, top: y, width }}
-      />,
-      <div
-        key="h-label"
-        className="measure-label"
-        style={{ left: left + width / 2, top: y }}
-      >
-        {px(horizontal)}
-      </div>,
-    );
-  }
-
-  if (vertical != null) {
-    const x = Math.min(from.right, to.right) - 8;
-    const top = from.bottom <= to.top ? from.bottom : to.bottom;
-    const height = vertical;
-    guides.push(
-      <div
-        key="v-line"
-        className="measure-line vertical"
-        style={{ left: x, top, height }}
-      />,
-      <div
-        key="v-label"
-        className="measure-label"
-        style={{ left: x, top: top + height / 2 }}
-      >
-        {px(vertical)}
-      </div>,
-    );
-  }
-
-  // When only one axis has a gap, still show the other element's outline via Boxes.
-  return <>{guides}</>;
+  return (
+    <div className="measure-layer" aria-hidden="true">
+      {guides.map((guide, index) => (
+        <div key={`${guide.orientation}-${index}`}>
+          <div
+            className={`measure-line ${guide.orientation}`}
+            style={
+              guide.orientation === "horizontal"
+                ? { left: guide.left, top: guide.top, width: guide.length }
+                : { left: guide.left, top: guide.top, height: guide.length }
+            }
+          />
+          <div
+            className="measure-label"
+            style={{ left: guide.labelLeft, top: guide.labelTop }}
+          >
+            {px(guide.label)}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export function Overlays({
@@ -92,20 +70,22 @@ export function Overlays({
   measurement,
 }: OverlaysProps) {
   return (
-    <div className="overlay-layer" aria-hidden="true">
-      {hoverRect && hoverEl && hoverEl !== selectedEl ? (
-        <Box rect={hoverRect} kind="hover" label={elementLabel(hoverEl)} />
-      ) : null}
-      {selectedRect && selectedEl ? (
-        <Box rect={selectedRect} kind="selected" label={elementLabel(selectedEl)} />
-      ) : null}
+    <>
+      <div className="overlay-layer" aria-hidden="true">
+        {hoverRect && hoverEl && hoverEl !== selectedEl ? (
+          <Box rect={hoverRect} kind="hover" label={elementLabel(hoverEl)} />
+        ) : null}
+        {selectedRect && selectedEl ? (
+          <Box rect={selectedRect} kind="selected" label={elementLabel(selectedEl)} />
+        ) : null}
+        {measurement ? (
+          <>
+            <Box rect={measurement.from} kind="selected" />
+            <Box rect={measurement.to} kind="hover" />
+          </>
+        ) : null}
+      </div>
       {measurement ? <MeasureGuides measurement={measurement} /> : null}
-      {measurement ? (
-        <>
-          <Box rect={measurement.from} kind="selected" />
-          <Box rect={measurement.to} kind="hover" />
-        </>
-      ) : null}
-    </div>
+    </>
   );
 }

@@ -54,6 +54,18 @@ check("rgbToHex short hex", rgbToHex("#abc") === "#AABBCC");
 check("gap horizontal adjacent", gapBetween(0, 100, 120, 200) === 20);
 check("gap overlap returns null", gapBetween(0, 100, 50, 150) === null);
 
+function contains(outer, inner) {
+  return (
+    inner.left >= outer.left &&
+    inner.right <= outer.right &&
+    inner.top >= outer.top &&
+    inner.bottom <= outer.bottom
+  );
+}
+const parent = { left: 0, right: 200, top: 0, bottom: 200, width: 200, height: 200 };
+const child = { left: 20, right: 80, top: 30, bottom: 90, width: 60, height: 60 };
+check("nested containment detected", contains(parent, child));
+
 const outDir = resolve(dirname(fileURLToPath(import.meta.url)), "../qa-output");
 mkdirSync(outDir, { recursive: true });
 writeFileSync(
