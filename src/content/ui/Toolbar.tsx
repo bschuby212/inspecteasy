@@ -15,6 +15,7 @@ interface ToolbarProps {
   mode: ToolMode;
   panelOpen: boolean;
   measuring: boolean;
+  hasSelection: boolean;
   commentsVisible: boolean;
   commentCount: number;
   onModeChange: (mode: ToolMode) => void;
@@ -27,6 +28,7 @@ export function Toolbar({
   mode,
   panelOpen,
   measuring,
+  hasSelection,
   commentsVisible,
   commentCount,
   onModeChange,
@@ -105,7 +107,7 @@ export function Toolbar({
         type="button"
         className={`toolbar-btn${mode === "measure" || measuring ? " active" : ""}`}
         onClick={() => onModeChange("measure")}
-        title="Measure — hold Alt while hovering (M)"
+        title="Measure (M) — click base, then hover · or Alt+hover in select mode"
         aria-label="Measure tool"
         aria-pressed={mode === "measure" || measuring}
       >
@@ -146,9 +148,11 @@ export function Toolbar({
       <span className="toolbar-hint">
         {measuring
           ? "Measuring…"
-          : mode === "select"
-            ? "Click to select · Esc exits"
-            : "Alt + hover"}
+          : mode === "measure"
+            ? hasSelection
+              ? "Hover to measure · click sets base"
+              : "Click base element, then hover"
+            : "Click to select · Alt+hover measures"}
       </span>
 
       <button
