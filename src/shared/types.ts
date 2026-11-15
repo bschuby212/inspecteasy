@@ -82,15 +82,37 @@ export interface MeasurementResult {
   overlap: boolean;
 }
 
+/** Temporary visual edits applied like Figma property tweaks. */
 export interface EditableStyles {
+  width?: string;
+  height?: string;
+  fontFamily?: string;
   fontSize?: string;
+  fontWeight?: string;
+  lineHeight?: string;
+  letterSpacing?: string;
+  textAlign?: string;
   color?: string;
   backgroundColor?: string;
+  borderColor?: string;
+  borderWidth?: string;
+  borderStyle?: string;
   borderRadius?: string;
+  opacity?: string;
+  boxShadow?: string;
   paddingTop?: string;
   paddingRight?: string;
   paddingBottom?: string;
   paddingLeft?: string;
+  marginTop?: string;
+  marginRight?: string;
+  marginBottom?: string;
+  marginLeft?: string;
+  gap?: string;
+  display?: string;
+  flexDirection?: string;
+  justifyContent?: string;
+  alignItems?: string;
 }
 
 export type MessageToBackground =

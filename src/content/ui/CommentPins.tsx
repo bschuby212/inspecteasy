@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type SyntheticEvent } from "react";
 import { MessageSquare, Trash2, X } from "lucide-react";
 import type { DesignComment } from "../../shared/types";
 
@@ -10,6 +10,10 @@ interface CommentPinsProps {
   onDelete: (id: string) => void;
 }
 
+function stop(e: SyntheticEvent) {
+  e.stopPropagation();
+}
+
 export function CommentPins({
   comments,
   visible,
@@ -17,14 +21,20 @@ export function CommentPins({
   onSelect,
   onDelete,
 }: CommentPinsProps) {
-  if (!visible || comments.length === 0) return null;
+  if (comments.length === 0) return null;
 
   return (
-    <div className="comment-layer" aria-label="Design comments">
+    <div
+      className={`comment-layer${visible ? "" : " is-hidden"}`}
+      aria-label="Design comments"
+      aria-hidden={!visible}
+      onMouseDown={stop}
+      onClick={stop}
+    >
       {comments.map((comment, index) => {
         const left = comment.pageX - window.scrollX;
         const top = comment.pageY - window.scrollY;
-        const open = activeId === comment.id;
+        const open = visible && activeId === comment.id;
 
         return (
           <div
@@ -38,8 +48,11 @@ export function CommentPins({
               title={comment.elementLabel}
               aria-label={`Comment ${index + 1}`}
               aria-expanded={open}
+              tabIndex={visible ? 0 : -1}
+              onMouseDown={stop}
               onClick={(e) => {
-                e.stopPropagation();
+                stop(e);
+                if (!visible) return;
                 onSelect(open ? null : comment.id);
               }}
             >
@@ -48,7 +61,13 @@ export function CommentPins({
             </button>
 
             {open ? (
-              <div className="comment-card" role="dialog" aria-label="Comment details">
+              <div
+                className="comment-card"
+                role="dialog"
+                aria-label="Comment details"
+                onMouseDown={stop}
+                onClick={stop}
+              >
                 <div className="comment-card-header">
                   <span className="comment-card-label" title={comment.elementLabel}>
                     {comment.elementLabel}
@@ -60,7 +79,7 @@ export function CommentPins({
                       title="Delete comment"
                       aria-label="Delete comment"
                       onClick={(e) => {
-                        e.stopPropagation();
+                        stop(e);
                         onDelete(comment.id);
                       }}
                     >
@@ -72,7 +91,7 @@ export function CommentPins({
                       title="Close"
                       aria-label="Close comment"
                       onClick={(e) => {
-                        e.stopPropagation();
+                        stop(e);
                         onSelect(null);
                       }}
                     >
@@ -81,6 +100,7 @@ export function CommentPins({
                   </div>
                 </div>
                 <p className="comment-card-note">{comment.note}</p>
+                <p className="comment-card-meta">Saved on this device · this page only</p>
               </div>
             ) : null}
           </div>
@@ -100,7 +120,13 @@ export function CommentComposer({ elementLabel, onCancel, onSave }: CommentCompo
   const [note, setNote] = useState("");
 
   return (
-    <div className="comment-composer" role="dialog" aria-label="Add design comment">
+    <div
+      className="comment-composer"
+      role="dialog"
+      aria-label="Add design comment"
+      onMouseDown={stop}
+      onClick={stop}
+    >
       <div className="comment-composer-title">Flag issue</div>
       <div className="comment-composer-target" title={elementLabel}>
         {elementLabel}
@@ -127,6 +153,10 @@ export function CommentComposer({ elementLabel, onCancel, onSave }: CommentCompo
           }
         }}
       />
+      <p className="comment-composer-meta">
+        Stays in this Chrome profile on this device for this page URL. Not synced to accounts or
+        other computers.
+      </p>
       <div className="btn-row">
         <button type="button" className="btn" onClick={onCancel}>
           Cancel

@@ -8,6 +8,38 @@ type StyleBackup = {
 const backups = new WeakMap<HTMLElement, StyleBackup>();
 const touched = new Set<HTMLElement>();
 
+const STYLE_MAP: Array<[keyof EditableStyles, keyof CSSStyleDeclaration]> = [
+  ["width", "width"],
+  ["height", "height"],
+  ["fontFamily", "fontFamily"],
+  ["fontSize", "fontSize"],
+  ["fontWeight", "fontWeight"],
+  ["lineHeight", "lineHeight"],
+  ["letterSpacing", "letterSpacing"],
+  ["textAlign", "textAlign"],
+  ["color", "color"],
+  ["backgroundColor", "backgroundColor"],
+  ["borderColor", "borderColor"],
+  ["borderWidth", "borderWidth"],
+  ["borderStyle", "borderStyle"],
+  ["borderRadius", "borderRadius"],
+  ["opacity", "opacity"],
+  ["boxShadow", "boxShadow"],
+  ["paddingTop", "paddingTop"],
+  ["paddingRight", "paddingRight"],
+  ["paddingBottom", "paddingBottom"],
+  ["paddingLeft", "paddingLeft"],
+  ["marginTop", "marginTop"],
+  ["marginRight", "marginRight"],
+  ["marginBottom", "marginBottom"],
+  ["marginLeft", "marginLeft"],
+  ["gap", "gap"],
+  ["display", "display"],
+  ["flexDirection", "flexDirection"],
+  ["justifyContent", "justifyContent"],
+  ["alignItems", "alignItems"],
+];
+
 export function applyTemporaryStyles(el: Element, styles: EditableStyles): void {
   if (!(el instanceof HTMLElement)) return;
 
@@ -16,14 +48,20 @@ export function applyTemporaryStyles(el: Element, styles: EditableStyles): void 
     touched.add(el);
   }
 
-  if (styles.fontSize !== undefined) el.style.fontSize = styles.fontSize;
-  if (styles.color !== undefined) el.style.color = styles.color;
-  if (styles.backgroundColor !== undefined) el.style.backgroundColor = styles.backgroundColor;
-  if (styles.borderRadius !== undefined) el.style.borderRadius = styles.borderRadius;
-  if (styles.paddingTop !== undefined) el.style.paddingTop = styles.paddingTop;
-  if (styles.paddingRight !== undefined) el.style.paddingRight = styles.paddingRight;
-  if (styles.paddingBottom !== undefined) el.style.paddingBottom = styles.paddingBottom;
-  if (styles.paddingLeft !== undefined) el.style.paddingLeft = styles.paddingLeft;
+  for (const [key, cssProp] of STYLE_MAP) {
+    const value = styles[key];
+    if (value === undefined) continue;
+    // CSSStyleDeclaration index set
+    (el.style as unknown as Record<string, string>)[cssProp as string] = value;
+  }
+
+  // If stroke width is set without style, ensure a visible border.
+  if (styles.borderWidth !== undefined && styles.borderStyle === undefined) {
+    const width = Number.parseFloat(styles.borderWidth);
+    if (width > 0 && (!el.style.borderStyle || el.style.borderStyle === "none")) {
+      el.style.borderStyle = "solid";
+    }
+  }
 }
 
 export function resetElement(el: Element): void {

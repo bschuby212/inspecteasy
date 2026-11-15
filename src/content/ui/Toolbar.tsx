@@ -125,8 +125,12 @@ export function Toolbar({
 
       <button
         type="button"
-        className={`toolbar-btn${commentsVisible ? " active" : ""}`}
-        onClick={onToggleComments}
+        className={`toolbar-btn comment-toggle${commentsVisible ? " active" : ""}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleComments();
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
         title={
           commentsVisible
             ? `Hide comments (${commentCount})`
@@ -136,6 +140,7 @@ export function Toolbar({
         aria-pressed={commentsVisible}
       >
         {commentsVisible ? <MessageSquare size={15} /> : <MessageSquareOff size={15} />}
+        {commentCount > 0 ? <span className="toolbar-badge">{commentCount}</span> : null}
       </button>
 
       <span className="toolbar-hint">

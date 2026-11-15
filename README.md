@@ -9,7 +9,7 @@ A designer-friendly Chrome extension for inspecting websites visually — inspir
 - Figma-like Design panel: dimensions, spacing, typography, appearance
 - One-click copy for property values
 - Alt/Option spacing measurement between two elements
-- Temporary live edits (font size, colors, radius, padding) with reset
+- Figma-like live edits in the Design panel: width/height, padding/margin, gap, type, fill, stroke, corner radius, opacity, and shadow (presets + X/Y/blur/spread/color) — temporary, with reset
 - Pin design comments (“why this is off”) on selected elements, with a toolbar toggle to show/hide pins
 - Shadow DOM UI isolation so page styles do not leak into the inspector
 
@@ -52,7 +52,7 @@ A portable ZIP is also generated at `inspect-studio-extension.zip` (contents of 
 | Reset edits | Reset button in the Design panel |
 | Close | Toolbar ✕ or deactivate via the extension icon |
 
-Comments are stored locally in the browser for that page URL (not synced to the cloud).
+Comments are stored only in this Chrome profile on this device, keyed by page URL (origin + path). They do not sync across accounts, devices, or profiles.
 
 Refreshing the page always restores the original site styles.
 

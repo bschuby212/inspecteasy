@@ -1,8 +1,24 @@
 import { MessageSquarePlus, RotateCcw, X } from "lucide-react";
-import { useEffect, useState } from "react";
 import type { EditableStyles, ElementSnapshot } from "../../shared/types";
 import { px } from "../../shared/format";
-import { PropertyRow } from "./PropertyRow";
+import {
+  ALIGN_ITEMS_OPTIONS,
+  ALIGN_OPTIONS,
+  ColorField,
+  DIRECTION_OPTIONS,
+  DISPLAY_OPTIONS,
+  FONT_OPTIONS,
+  JUSTIFY_OPTIONS,
+  NumField,
+  PairRow,
+  QuadEdit,
+  SHADOW_PRESETS,
+  SelectField,
+  SegmentedField,
+  WEIGHT_OPTIONS,
+  matchFontOption,
+} from "./EditControls";
+import { formatShadow, parseShadow } from "./shadow";
 
 interface PropertiesPanelProps {
   open: boolean;
@@ -15,11 +31,16 @@ interface PropertiesPanelProps {
   onFlag: () => void;
 }
 
-function toColorInput(value: string, fallback: string): string {
-  if (value.startsWith("#") && (value.length === 7 || value.length === 9)) {
-    return value.slice(0, 7);
-  }
-  return fallback;
+function opacityPercent(value: string): string {
+  const n = Number.parseFloat(value);
+  if (!Number.isFinite(n)) return "100";
+  return String(Math.round(n * 100));
+}
+
+function borderWidthPx(value: string): string {
+  if (!value || value === "—") return "0px";
+  const first = value.split("/")[0]?.trim() ?? value;
+  return first.endsWith("px") ? first : `${Number.parseFloat(first) || 0}px`;
 }
 
 export function PropertiesPanel({
@@ -32,25 +53,6 @@ export function PropertiesPanel({
   onEdit,
   onFlag,
 }: PropertiesPanelProps) {
-  const [draft, setDraft] = useState({
-    fontSize: "",
-    color: "#000000",
-    backgroundColor: "#ffffff",
-    borderRadius: "",
-    padding: "",
-  });
-
-  useEffect(() => {
-    if (!snapshot) return;
-    setDraft({
-      fontSize: snapshot.typography.fontSize.replace(/px$/i, ""),
-      color: toColorInput(snapshot.typography.color, "#000000"),
-      backgroundColor: toColorInput(snapshot.appearance.backgroundColor, "#ffffff"),
-      borderRadius: snapshot.appearance.borderRadius.replace(/px$/i, "").split(" ")[0] ?? "",
-      padding: snapshot.spacing.padding.top.replace(/px$/i, ""),
-    });
-  }, [snapshot]);
-
   return (
     <aside className={`panel${open ? "" : " collapsed"}`} aria-hidden={!open}>
       <div className="panel-header">
@@ -83,8 +85,8 @@ export function PropertiesPanel({
           <div className="empty-state">
             <h3>Select an element</h3>
             <p>
-              Click any element on the page to inspect typography, spacing, colors, and layout —
-              like selecting in Figma.
+              Click any element to inspect and edit it like a Figma layer — size, spacing,
+              type, fill, and stroke update live on the page.
             </p>
           </div>
         ) : (
@@ -104,171 +106,361 @@ export function PropertiesPanel({
                   <MessageSquarePlus size={14} />
                   Flag issue
                 </button>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={onReset}
+                  disabled={!hasEdits}
+                  title="Reset temporary edits"
+                >
+                  Reset
+                </button>
               </div>
+              {hasEdits ? (
+                <p className="edit-hint">Temporary edits — refresh or Reset restores the page.</p>
+              ) : null}
             </div>
 
             <section className="section">
-              <h2 className="section-title">Element</h2>
-              <PropertyRow label="Type" value={snapshot.tagName} />
-              <PropertyRow label="Width" value={px(snapshot.geometry.width)} />
-              <PropertyRow label="Height" value={px(snapshot.geometry.height)} />
-              <PropertyRow label="X" value={px(snapshot.geometry.x)} />
-              <PropertyRow label="Y" value={px(snapshot.geometry.y)} />
-              <PropertyRow label="Display" value={snapshot.layout.display} />
+              <h2 className="section-title">Frame</h2>
+              <PairRow>
+                <NumField
+                  id="is-width"
+                  label="W"
+                  value={px(snapshot.geometry.width)}
+                  min={1}
+                  onCommit={(width) => onEdit({ width })}
+                />
+                <NumField
+                  id="is-height"
+                  label="H"
+                  value={px(snapshot.geometry.height)}
+                  min={1}
+                  onCommit={(height) => onEdit({ height })}
+                />
+              </PairRow>
+              <p className="fig-meta">
+                X {px(snapshot.geometry.x)} · Y {px(snapshot.geometry.y)}
+              </p>
+              <SelectField
+                id="is-display"
+                label="Display"
+                value={snapshot.layout.display}
+                options={DISPLAY_OPTIONS}
+                onCommit={(display) => onEdit({ display })}
+              />
             </section>
 
             <section className="section">
-              <h2 className="section-title">Layout & spacing</h2>
-              <div className="quad">
-                <div className="quad-item">
-                  <span className="row-label">Padding</span>
-                  <PropertyRow label="T" value={snapshot.spacing.padding.top} />
-                  <PropertyRow label="R" value={snapshot.spacing.padding.right} />
-                  <PropertyRow label="B" value={snapshot.spacing.padding.bottom} />
-                  <PropertyRow label="L" value={snapshot.spacing.padding.left} />
-                </div>
-                <div className="quad-item">
-                  <span className="row-label">Margin</span>
-                  <PropertyRow label="T" value={snapshot.spacing.margin.top} />
-                  <PropertyRow label="R" value={snapshot.spacing.margin.right} />
-                  <PropertyRow label="B" value={snapshot.spacing.margin.bottom} />
-                  <PropertyRow label="L" value={snapshot.spacing.margin.left} />
-                </div>
+              <h2 className="section-title">Spacing</h2>
+              <div className="fig-spacing">
+                <QuadEdit
+                  title="Padding"
+                  values={snapshot.spacing.padding}
+                  ids={{
+                    top: "is-pad-t",
+                    right: "is-pad-r",
+                    bottom: "is-pad-b",
+                    left: "is-pad-l",
+                  }}
+                  onChange={(side, value) => {
+                    if (side === "top") onEdit({ paddingTop: value });
+                    if (side === "right") onEdit({ paddingRight: value });
+                    if (side === "bottom") onEdit({ paddingBottom: value });
+                    if (side === "left") onEdit({ paddingLeft: value });
+                  }}
+                />
+                <QuadEdit
+                  title="Margin"
+                  values={snapshot.spacing.margin}
+                  ids={{
+                    top: "is-mar-t",
+                    right: "is-mar-r",
+                    bottom: "is-mar-b",
+                    left: "is-mar-l",
+                  }}
+                  onChange={(side, value) => {
+                    if (side === "top") onEdit({ marginTop: value });
+                    if (side === "right") onEdit({ marginRight: value });
+                    if (side === "bottom") onEdit({ marginBottom: value });
+                    if (side === "left") onEdit({ marginLeft: value });
+                  }}
+                />
               </div>
-              <PropertyRow label="Gap" value={snapshot.layout.gap ?? "—"} />
-              <PropertyRow label="Direction" value={snapshot.layout.flexDirection ?? "—"} />
-              <PropertyRow label="Justify" value={snapshot.layout.justifyContent ?? "—"} />
-              <PropertyRow label="Align" value={snapshot.layout.alignItems ?? "—"} />
-              <PropertyRow label="Wrap" value={snapshot.layout.flexWrap ?? "—"} />
-              <PropertyRow
-                label="Grid columns"
-                value={snapshot.layout.gridTemplateColumns ?? "—"}
+              <NumField
+                id="is-gap"
+                label="Gap"
+                value={snapshot.layout.gap ?? "0px"}
+                onCommit={(gap) => onEdit({ gap })}
               />
-              <PropertyRow label="Grid rows" value={snapshot.layout.gridTemplateRows ?? "—"} />
+            </section>
+
+            <section className="section">
+              <h2 className="section-title">Auto layout</h2>
+              <SelectField
+                id="is-direction"
+                label="Direction"
+                value={snapshot.layout.flexDirection ?? "row"}
+                options={DIRECTION_OPTIONS}
+                onCommit={(flexDirection) => onEdit({ display: "flex", flexDirection })}
+              />
+              <SelectField
+                id="is-justify"
+                label="Justify"
+                value={snapshot.layout.justifyContent ?? "flex-start"}
+                options={JUSTIFY_OPTIONS}
+                onCommit={(justifyContent) => onEdit({ justifyContent })}
+              />
+              <SelectField
+                id="is-align-items"
+                label="Align"
+                value={snapshot.layout.alignItems ?? "stretch"}
+                options={ALIGN_ITEMS_OPTIONS}
+                onCommit={(alignItems) => onEdit({ alignItems })}
+              />
             </section>
 
             <section className="section">
               <h2 className="section-title">Typography</h2>
-              <PropertyRow label="Font" value={snapshot.typography.fontFamily} />
-              <PropertyRow label="Size" value={snapshot.typography.fontSize} />
-              <PropertyRow label="Weight" value={snapshot.typography.fontWeight} />
-              <PropertyRow label="Line height" value={snapshot.typography.lineHeight} />
-              <PropertyRow label="Letter spacing" value={snapshot.typography.letterSpacing} />
-              <PropertyRow label="Align" value={snapshot.typography.textAlign} />
-              <PropertyRow
+              <SelectField
+                id="is-font"
+                label="Font"
+                value={matchFontOption(snapshot.typography.fontFamily)}
+                options={[
+                  ...FONT_OPTIONS,
+                  {
+                    value: snapshot.typography.fontFamily,
+                    label: snapshot.typography.fontFamily,
+                  },
+                ].filter(
+                  (opt, i, arr) => arr.findIndex((o) => o.value === opt.value) === i,
+                )}
+                onCommit={(fontFamily) => onEdit({ fontFamily })}
+              />
+              <PairRow>
+                <NumField
+                  id="is-font-size"
+                  label="Size"
+                  value={snapshot.typography.fontSize}
+                  min={1}
+                  onCommit={(fontSize) => onEdit({ fontSize })}
+                />
+                <SelectField
+                  id="is-weight"
+                  label="Weight"
+                  value={snapshot.typography.fontWeight}
+                  options={WEIGHT_OPTIONS}
+                  onCommit={(fontWeight) => onEdit({ fontWeight })}
+                />
+              </PairRow>
+              <PairRow>
+                <NumField
+                  id="is-line-height"
+                  label="Line"
+                  value={
+                    snapshot.typography.lineHeight === "normal"
+                      ? ""
+                      : snapshot.typography.lineHeight
+                  }
+                  min={0}
+                  step={0.1}
+                  onCommit={(lineHeight) => onEdit({ lineHeight })}
+                />
+                <NumField
+                  id="is-letter-spacing"
+                  label="Letter"
+                  value={
+                    snapshot.typography.letterSpacing === "normal"
+                      ? "0px"
+                      : snapshot.typography.letterSpacing
+                  }
+                  min={-10}
+                  step={0.1}
+                  onCommit={(letterSpacing) => onEdit({ letterSpacing })}
+                />
+              </PairRow>
+              <SegmentedField
+                label="Align"
+                value={snapshot.typography.textAlign}
+                options={ALIGN_OPTIONS}
+                onCommit={(textAlign) => onEdit({ textAlign })}
+              />
+              <ColorField
+                id="is-color"
                 label="Color"
                 value={snapshot.typography.color}
-                swatch={snapshot.typography.color}
+                onCommit={(color) => onEdit({ color })}
               />
             </section>
 
             <section className="section">
-              <h2 className="section-title">Appearance</h2>
-              <PropertyRow
+              <h2 className="section-title">Fill & stroke</h2>
+              <ColorField
+                id="is-bg"
                 label="Fill"
-                value={snapshot.appearance.backgroundColor}
-                swatch={snapshot.appearance.backgroundColor}
+                value={
+                  snapshot.appearance.backgroundColor === "transparent"
+                    ? "#ffffff"
+                    : snapshot.appearance.backgroundColor
+                }
+                onCommit={(backgroundColor) => onEdit({ backgroundColor })}
               />
-              <PropertyRow
-                label="Border"
-                value={snapshot.appearance.borderColor}
-                swatch={
-                  snapshot.appearance.borderColor !== "—"
-                    ? snapshot.appearance.borderColor
-                    : undefined
+              <ColorField
+                id="is-border-color"
+                label="Stroke"
+                value={
+                  snapshot.appearance.borderColor === "—"
+                    ? "#000000"
+                    : snapshot.appearance.borderColor
+                }
+                onCommit={(borderColor) =>
+                  onEdit({ borderColor, borderStyle: "solid" })
                 }
               />
-              <PropertyRow label="Border width" value={snapshot.appearance.borderWidth} />
-              <PropertyRow label="Radius" value={snapshot.appearance.borderRadius} />
-              <PropertyRow label="Opacity" value={snapshot.appearance.opacity} />
-              <PropertyRow label="Shadow" value={snapshot.appearance.boxShadow} />
+              <PairRow>
+                <NumField
+                  id="is-border-width"
+                  label="Weight"
+                  value={borderWidthPx(snapshot.appearance.borderWidth)}
+                  onCommit={(borderWidth) =>
+                    onEdit({ borderWidth, borderStyle: "solid" })
+                  }
+                />
+                <NumField
+                  id="is-radius"
+                  label="Radius"
+                  value={snapshot.appearance.borderRadius}
+                  onCommit={(borderRadius) => onEdit({ borderRadius })}
+                />
+              </PairRow>
             </section>
 
             <section className="section">
-              <h2 className="section-title">Edit</h2>
-              <div className="edit-grid">
-                <div className="field">
-                  <label htmlFor="is-font-size">Font size</label>
-                  <input
-                    id="is-font-size"
-                    type="number"
-                    min={1}
-                    value={draft.fontSize}
-                    onChange={(e) => {
-                      const fontSize = e.target.value;
-                      setDraft((d) => ({ ...d, fontSize }));
-                      if (fontSize) onEdit({ fontSize: `${fontSize}px` });
-                    }}
-                  />
-                </div>
-                <div className="field">
-                  <label htmlFor="is-color">Text color</label>
-                  <input
-                    id="is-color"
-                    type="color"
-                    value={draft.color}
-                    onChange={(e) => {
-                      const color = e.target.value;
-                      setDraft((d) => ({ ...d, color }));
-                      onEdit({ color });
-                    }}
-                  />
-                </div>
-                <div className="field">
-                  <label htmlFor="is-bg">Background</label>
-                  <input
-                    id="is-bg"
-                    type="color"
-                    value={draft.backgroundColor}
-                    onChange={(e) => {
-                      const backgroundColor = e.target.value;
-                      setDraft((d) => ({ ...d, backgroundColor }));
-                      onEdit({ backgroundColor });
-                    }}
-                  />
-                </div>
-                <div className="field">
-                  <label htmlFor="is-radius">Radius</label>
-                  <input
-                    id="is-radius"
-                    type="number"
-                    min={0}
-                    value={draft.borderRadius}
-                    onChange={(e) => {
-                      const borderRadius = e.target.value;
-                      setDraft((d) => ({ ...d, borderRadius }));
-                      if (borderRadius !== "") onEdit({ borderRadius: `${borderRadius}px` });
-                    }}
-                  />
-                </div>
-                <div className="field">
-                  <label htmlFor="is-padding">Padding</label>
-                  <input
-                    id="is-padding"
-                    type="number"
-                    min={0}
-                    value={draft.padding}
-                    onChange={(e) => {
-                      const padding = e.target.value;
-                      setDraft((d) => ({ ...d, padding }));
-                      if (padding !== "") {
-                        const v = `${padding}px`;
+              <h2 className="section-title">Effects</h2>
+              <NumField
+                id="is-opacity"
+                label="Opacity"
+                value={`${opacityPercent(snapshot.appearance.opacity)}%`}
+                min={0}
+                step={1}
+                suffix="%"
+                onCommit={(raw) => {
+                  const pct = Number.parseFloat(raw);
+                  if (!Number.isFinite(pct)) return;
+                  onEdit({ opacity: String(Math.max(0, Math.min(100, pct)) / 100) });
+                }}
+              />
+              <SelectField
+                id="is-shadow-preset"
+                label="Shadow"
+                value={
+                  snapshot.appearance.boxShadow === "—"
+                    ? "none"
+                    : SHADOW_PRESETS.some((p) => p.value === snapshot.appearance.boxShadow)
+                      ? snapshot.appearance.boxShadow
+                      : "custom"
+                }
+                options={[
+                  ...SHADOW_PRESETS,
+                  { value: "custom", label: "Custom" },
+                ]}
+                onCommit={(boxShadow) => {
+                  if (boxShadow === "custom") {
+                    const parts = parseShadow(snapshot.appearance.boxShadow);
+                    onEdit({ boxShadow: formatShadow({ ...parts, enabled: true }) });
+                    return;
+                  }
+                  onEdit({ boxShadow });
+                }}
+              />
+              {(() => {
+                const shadow = parseShadow(snapshot.appearance.boxShadow);
+                if (!shadow.enabled && snapshot.appearance.boxShadow === "—") return null;
+                if (snapshot.appearance.boxShadow === "none" || snapshot.appearance.boxShadow === "—") {
+                  return null;
+                }
+                return (
+                  <div className="fig-shadow-controls">
+                    <PairRow>
+                      <NumField
+                        id="is-shadow-x"
+                        label="X"
+                        value={`${shadow.x}px`}
+                        min={-200}
+                        onCommit={(v) =>
+                          onEdit({
+                            boxShadow: formatShadow({
+                              ...shadow,
+                              enabled: true,
+                              x: Number.parseFloat(v) || 0,
+                            }),
+                          })
+                        }
+                      />
+                      <NumField
+                        id="is-shadow-y"
+                        label="Y"
+                        value={`${shadow.y}px`}
+                        min={-200}
+                        onCommit={(v) =>
+                          onEdit({
+                            boxShadow: formatShadow({
+                              ...shadow,
+                              enabled: true,
+                              y: Number.parseFloat(v) || 0,
+                            }),
+                          })
+                        }
+                      />
+                    </PairRow>
+                    <PairRow>
+                      <NumField
+                        id="is-shadow-blur"
+                        label="Blur"
+                        value={`${shadow.blur}px`}
+                        onCommit={(v) =>
+                          onEdit({
+                            boxShadow: formatShadow({
+                              ...shadow,
+                              enabled: true,
+                              blur: Number.parseFloat(v) || 0,
+                            }),
+                          })
+                        }
+                      />
+                      <NumField
+                        id="is-shadow-spread"
+                        label="Spread"
+                        value={`${shadow.spread}px`}
+                        min={-100}
+                        onCommit={(v) =>
+                          onEdit({
+                            boxShadow: formatShadow({
+                              ...shadow,
+                              enabled: true,
+                              spread: Number.parseFloat(v) || 0,
+                            }),
+                          })
+                        }
+                      />
+                    </PairRow>
+                    <ColorField
+                      id="is-shadow-color"
+                      label="Color"
+                      value={shadow.color.startsWith("#") ? shadow.color : "#000000"}
+                      onCommit={(color) =>
                         onEdit({
-                          paddingTop: v,
-                          paddingRight: v,
-                          paddingBottom: v,
-                          paddingLeft: v,
-                        });
+                          boxShadow: formatShadow({
+                            ...shadow,
+                            enabled: true,
+                            color,
+                          }),
+                        })
                       }
-                    }}
-                  />
-                </div>
-              </div>
-              <div className="btn-row">
-                <button type="button" className="btn" onClick={onReset} disabled={!hasEdits}>
-                  Reset changes
-                </button>
-              </div>
+                    />
+                  </div>
+                );
+              })()}
             </section>
           </>
         )}

@@ -16,7 +16,14 @@ import {
   resetAllEdits,
   resetElement,
 } from "../edit/styleEdits";
-import { createCommentId, loadComments, saveComments } from "../comments/storage";
+import {
+  createCommentId,
+  loadComments,
+  loadCommentsVisible,
+  pageUrlKey,
+  saveComments,
+  saveCommentsVisible,
+} from "../comments/storage";
 import { Toolbar } from "./Toolbar";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { Overlays } from "./Overlays";
@@ -29,10 +36,6 @@ interface AppProps {
 function readRect(el: Element | null): ElementGeometry | null {
   if (!el) return null;
   return toGeometry(el.getBoundingClientRect());
-}
-
-function pageUrlKey(): string {
-  return `${location.origin}${location.pathname}`;
 }
 
 export function App({ onClose }: AppProps) {
@@ -67,7 +70,19 @@ export function App({ onClose }: AppProps) {
   }, [refreshSelection]);
 
   useEffect(() => {
-    void loadComments(pageUrlKey()).then(setComments);
+    let cancelled = false;
+    void (async () => {
+      const [storedComments, visible] = await Promise.all([
+        loadComments(),
+        loadCommentsVisible(),
+      ]);
+      if (cancelled) return;
+      setComments(storedComments);
+      setCommentsVisible(visible);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -93,7 +108,9 @@ export function App({ onClose }: AppProps) {
       const target = e.target as HTMLElement | null;
       if (
         isFromInspectStudio(e) &&
-        (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA")
+        (target?.tagName === "INPUT" ||
+          target?.tagName === "TEXTAREA" ||
+          target?.tagName === "SELECT")
       ) {
         return;
       }
@@ -232,7 +249,17 @@ export function App({ onClose }: AppProps) {
 
   async function persist(next: DesignComment[]) {
     setComments(next);
-    await saveComments(pageUrlKey(), next);
+    await saveComments(next);
+  }
+
+  function handleToggleComments() {
+    setCommentsVisible((prev) => {
+      const next = !prev;
+      if (!next) setActiveCommentId(null);
+      void saveCommentsVisible(next);
+      setToast(next ? "Comments shown" : "Comments hidden");
+      return next;
+    });
   }
 
   function handleEdit(styles: EditableStyles) {
@@ -262,7 +289,6 @@ export function App({ onClose }: AppProps) {
   function handleFlag() {
     if (!selectedEl || !snapshot) return;
     setComposing(true);
-    setCommentsVisible(true);
     setPanelOpen(true);
   }
 
@@ -283,7 +309,8 @@ export function App({ onClose }: AppProps) {
     setComposing(false);
     setActiveCommentId(comment.id);
     setCommentsVisible(true);
-    setToast("Comment pinned");
+    void saveCommentsVisible(true);
+    setToast("Comment pinned · saved on this device");
   }
 
   async function handleDeleteComment(id: string) {
@@ -320,7 +347,7 @@ export function App({ onClose }: AppProps) {
         commentCount={comments.length}
         onModeChange={handleModeChange}
         onTogglePanel={() => setPanelOpen((v) => !v)}
-        onToggleComments={() => setCommentsVisible((v) => !v)}
+        onToggleComments={handleToggleComments}
         onClose={onClose}
       />
       <PropertiesPanel

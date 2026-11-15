@@ -119,25 +119,24 @@ try {
   await sleep(350);
   const selected = await page.evaluate(() => {
     const root = document.getElementById("inspect-studio-root")?.shadowRoot;
-    const rows = [...(root?.querySelectorAll(".row") ?? [])].map((r) =>
-      r.textContent?.replace(/\s+/g, " ").trim(),
-    );
+    const val = (sel) => root?.querySelector(sel)?.value ?? null;
     return {
       label: root?.querySelector(".element-chip")?.textContent?.trim(),
-      size: rows.find((r) => r?.startsWith("Size")),
-      color: rows.find((r) => r?.startsWith("Color")),
-      width: rows.find((r) => r?.startsWith("Width")),
-      padding: rows.find((r) => r === "T" || r?.startsWith("T ")),
+      width: val("#is-width"),
+      size: val("#is-font-size"),
+      color: val("#is-color"),
+      padT: Boolean(root?.querySelector("#is-pad-t")),
       sections: [...(root?.querySelectorAll(".section-title") ?? [])].map((s) => s.textContent),
     };
   });
   check("Selection updates panel", selected.label?.includes("h1"), selected.label || "");
-  check("Dimensions shown", Boolean(selected.width), selected.width || "");
-  check("Typography size shown", Boolean(selected.size), selected.size || "");
-  check("Text color shown", Boolean(selected.color), selected.color || "");
+  check("Dimensions editable", Boolean(selected.width), selected.width || "");
+  check("Typography size editable", Boolean(selected.size), selected.size || "");
+  check("Text color editable", Boolean(selected.color), selected.color || "");
+  check("Spacing controls present", selected.padT);
   check(
     "Panel sections present",
-    ["Element", "Layout", "Typography", "Appearance", "Edit"].every((s) =>
+    ["Frame", "Spacing", "Typography", "Fill", "Effects"].every((s) =>
       selected.sections.some((x) => x?.includes(s)),
     ),
     selected.sections.join(", "),
@@ -180,15 +179,68 @@ try {
   }
   check("Live font-size edit", fontSize === "48px", fontSize);
 
+  // Figma-like spacing / radius / fill / shadow edits
+  async function setInput(sel, value) {
+    await page.evaluate(
+      ({ sel, value }) => {
+        const input = document
+          .getElementById("inspect-studio-root")
+          ?.shadowRoot?.querySelector(sel);
+        if (!(input instanceof HTMLInputElement) && !(input instanceof HTMLSelectElement)) {
+          throw new Error(`missing ${sel}`);
+        }
+        const proto = Object.getOwnPropertyDescriptor(
+          input instanceof HTMLSelectElement
+            ? HTMLSelectElement.prototype
+            : HTMLInputElement.prototype,
+          "value",
+        )?.set;
+        proto?.call(input, value);
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+      },
+      { sel, value },
+    );
+    await sleep(120);
+  }
+
+  await setInput("#is-pad-t", "32");
+  const padTop = await page.$eval("#title", (el) => getComputedStyle(el).paddingTop);
+  check("Live padding edit", padTop === "32px", padTop);
+
+  await setInput("#is-radius", "20");
+  const radius = await page.$eval("#title", (el) => getComputedStyle(el).borderTopLeftRadius);
+  check("Live radius edit", radius === "20px", radius);
+
+  await setInput("#is-bg", "#112233");
+  // color input may need direct onChange via React - also try fill hex sibling
+  await page.evaluate(() => {
+    const root = document.getElementById("inspect-studio-root")?.shadowRoot;
+    const hex = root?.querySelector("#is-bg")?.parentElement?.querySelector(".fig-hex");
+    if (!(hex instanceof HTMLInputElement)) return;
+    const proto = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    proto?.call(hex, "#112233");
+    hex.dispatchEvent(new Event("input", { bubbles: true }));
+    hex.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await sleep(150);
+  const bg = await page.$eval("#title", (el) => getComputedStyle(el).backgroundColor);
+  check("Live fill color edit", bg.includes("17, 34, 51") || bg === "rgb(17, 34, 51)", bg);
+
+  await setInput("#is-shadow-preset", "0px 4px 12px 0px #00000026");
+  const shadow = await page.$eval("#title", (el) => getComputedStyle(el).boxShadow);
+  check("Live shadow edit", shadow !== "none", shadow);
+
   await page.evaluate(() => {
     const root = document.getElementById("inspect-studio-root")?.shadowRoot;
     [...(root?.querySelectorAll("button") ?? [])]
-      .find((b) => b.textContent?.includes("Reset changes"))
+      .find((b) => (b.textContent || "").trim() === "Reset")
       ?.click();
   });
   await sleep(200);
   const afterReset = await page.$eval("#title", (el) => getComputedStyle(el).fontSize);
-  check("Reset restores styles", afterReset !== "48px", afterReset);
+  const padAfter = await page.$eval("#title", (el) => getComputedStyle(el).paddingTop);
+  check("Reset restores styles", afterReset !== "48px" && padAfter !== "32px", `${afterReset}/${padAfter}`);
 
   // Flag / comment
   await page.evaluate(() => {
@@ -242,12 +294,12 @@ try {
     toggle?.click();
   });
   await sleep(150);
-  const pinsHidden = await page.evaluate(
-    () =>
-      !document
-        .getElementById("inspect-studio-root")
-        ?.shadowRoot?.querySelector(".comment-pin-btn"),
-  );
+  const pinsHidden = await page.evaluate(() => {
+    const layer = document
+      .getElementById("inspect-studio-root")
+      ?.shadowRoot?.querySelector(".comment-layer");
+    return Boolean(layer?.classList.contains("is-hidden"));
+  });
   check("Toolbar toggles comments off", pinsHidden);
 
   await page.evaluate(() => {
@@ -258,13 +310,12 @@ try {
     toggle?.click();
   });
   await sleep(150);
-  const pinsShown = await page.evaluate(() =>
-    Boolean(
-      document
-        .getElementById("inspect-studio-root")
-        ?.shadowRoot?.querySelector(".comment-pin-btn"),
-    ),
-  );
+  const pinsShown = await page.evaluate(() => {
+    const layer = document
+      .getElementById("inspect-studio-root")
+      ?.shadowRoot?.querySelector(".comment-layer");
+    return Boolean(layer && !layer.classList.contains("is-hidden"));
+  });
   check("Toolbar toggles comments on", pinsShown);
 
   // Measurement
