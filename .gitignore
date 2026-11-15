@@ -2,6 +2,7 @@ node_modules/
 dist-build-info.json
 qa-output/
 extension/
+.extension-zip-staging/
 extension-private.pem
 extension-key.pem
 .extension-id
