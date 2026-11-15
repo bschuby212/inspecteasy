@@ -1,6 +1,7 @@
 node_modules/
 dist-build-info.json
 qa-output/
+extension/
 extension-private.pem
 extension-key.pem
 .extension-id

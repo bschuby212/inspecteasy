@@ -18,10 +18,12 @@ if (existsSync(resolve(publicDir, "fonts"))) {
   cpSync(resolve(publicDir, "fonts"), resolve(dist, "fonts"), { recursive: true });
 }
 
-const zipPath = resolve(root, "inspect-studio-extension.zip");
-if (existsSync(zipPath)) rmSync(zipPath);
-
-execSync(`cd "${dist}" && zip -r "${zipPath}" .`, { stdio: "inherit" });
+const zipNames = ["extension.zip", "inspect-studio-extension.zip"];
+for (const name of zipNames) {
+  const zipPath = resolve(root, name);
+  if (existsSync(zipPath)) rmSync(zipPath);
+  execSync(`cd "${dist}" && zip -r "${zipPath}" .`, { stdio: "inherit" });
+}
 
 const manifest = JSON.parse(readFileSync(resolve(dist, "manifest.json"), "utf8"));
 writeFileSync(
@@ -31,11 +33,11 @@ writeFileSync(
       name: manifest.name,
       version: manifest.version,
       builtAt: new Date().toISOString(),
-      zip: "inspect-studio-extension.zip",
+      zip: "extension.zip",
     },
     null,
     2,
   ),
 );
 
-console.log("Packaged inspect-studio-extension.zip");
+console.log("Packaged extension.zip and inspect-studio-extension.zip");

@@ -36,7 +36,12 @@ Then load the unpacked extension:
 5. Pin **Inspect Studio** to the Chrome toolbar
 6. Open any ordinary HTTP/HTTPS website and click the extension icon to activate
 
-A portable ZIP is also generated at `inspect-studio-extension.zip` (contents of `dist`).
+Portable install ZIPs (same contents as `dist/`):
+
+- **`extension.zip`** ← download this
+- `inspect-studio-extension.zip` (same package)
+
+Unzip, then Load unpacked on the folder that contains `manifest.json`.
 
 ## Usage
 
